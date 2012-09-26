@@ -37,7 +37,16 @@ CalculateInitialCost <- function(slack, beta, n=10) {
   return(init.cost)
 }
 
-SimulateStaticMarket <- function(slack, beta, base, fee, mean, sd) {
+CostOfMarket <- function(alpha, vector) {
+  sum   <- sum(vector)
+  beta  <- alpha * sum
+  cost  <- beta * log(
+    Reduce(function(x,y){x+y},lapply(vector, function(x){as.numeric(exp(as.brob(x / beta)))}), 0)
+  )
+  return(cost)
+}
+
+SimulateDynamicMarket <- function(slack, beta, base, fee, mean, sd, steps) {
   # Simulates a path dependent market
   # Args:
   #   slack: the amount above one prices may rise
@@ -46,6 +55,7 @@ SimulateStaticMarket <- function(slack, beta, base, fee, mean, sd) {
   #   fee: the average fee charged by the market
   #   mean: the mean of the final distribution
   #   sd: the standard deviation of the final distribution
+  #   steps: the number of transactional steps the simulation takes
   # Returns a vector of important parameters for the market
   
   # working out that a bet w/ just one condition gets this
@@ -58,28 +68,34 @@ SimulateStaticMarket <- function(slack, beta, base, fee, mean, sd) {
   initial.events  <- (beta / alpha) / atoms
   initial.cost    <- CalculateInitialCost(slack, beta, base)
   
+  # this is the initial vector at desired liquidity levels
+  initial.vector  <- seq(0, 0, length=atoms) + initial.events
+  
   # generate a position vector with a gaussian dist with parameters given in the function
-  position.vector <- round(rnorm(atoms, mean, sd)) + initial.events
+  position.vector        <- rnorm(atoms, mean, sd)
   
-  # calculate the new beta
-  d.beta          <- alpha * sum(position.vector)
+  # norm this by the # of steps we'll be using
+  normed.position.vector <- round(position.vector / steps)
   
-  # calculate the new cost of the market
-  # formula is beta * log sum_i exp q_i / beta
-  d.cost          <- d.beta * log(
-    Reduce(function(x,y){x+y},lapply(position.vector, function(x){as.numeric(exp(as.brob(x / d.beta)))}), 0)
-  )
-  
-  # delta in cost at each position is how much money the market takes in. the assumption
-  # is that in one block the market takes in approximately as it would over pieces. 
-  # to be tested in another iteration
-  intake          <- d.cost - initial.cost
+  # calculate how much $ the market takes in
+  intake <- 0
+  for (i in 1:steps) {
+    before.vector <- initial.vector + ((i-1) * normed.position.vector)
+    after.vector  <- before.vector + normed.position.vector
+    before.cost   <- CostOfMarket(alpha, before.vector)
+    after.cost    <- CostOfMarket(alpha, after.vector)
+    period.intake <- after.cost - before.cost
+    intake        <- intake + period.intake   
+  }
   
   # the max outlay is just the # of positions on the winning bet
   outlay          <- max(position.vector) - initial.events
   
   # the total # of positions taken in the market
-  positions       <- sum(position.vector) - atoms * initial.events
+  positions       <- sum(round(position.vector)) - atoms * initial.events
+  
+  # the new beta
+  d.beta          <- alpha * positions
   
   # assuming each position was purchased at a price of 1/atoms
   volume          <- positions / atoms
@@ -104,4 +120,9 @@ SimulateStaticMarket <- function(slack, beta, base, fee, mean, sd) {
   return(round(summary))
 }
 
-SimulateMarket(0.1, 1000, 10, 0.5, 0, 0)
+
+
+
+
+
+
