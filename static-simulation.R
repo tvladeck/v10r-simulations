@@ -19,7 +19,7 @@ CalculateInitialCost <- function(slack, beta, n=10) {
   # 
   # Returns: 
   #   The total liability of the market maker
-  n   								<- 2 ** n
+  n                   <- 2 ** n
   nlogn               <- n * log(n)
   
   # slack; = alpha * n log n
@@ -48,22 +48,50 @@ SimulateMarket <- function(slack, beta, base, fee, mean, sd) {
   #   mean: the mean of the final distribution
   #   sd: the standard deviation of the final distribution
   # Returns a vector of important parameters for the market
+  
+  # working out that a bet w/ just one condition gets this
+  # charge
   charge          <- fee / (2**(base - 1))
+  
+  # working out some basic details of the market
   atoms           <- 2 ** base
   alpha           <- CalculateAlpha(slack, base)
   initial.events  <- (beta / alpha) / atoms
   initial.cost    <- CalculateInitialCost(slack, beta, base)
+  
+  # generate a position vector with a gaussian dist with parameters given in the function
   position.vector <- round(rnorm(atoms, mean, sd)) + initial.events
+  
+  # calculate the new beta
   d.beta          <- alpha * sum(position.vector)
+  
+  # calculate the new cost of the market
+  # formula is beta * log sum_i exp q_i / beta
   d.cost          <- d.beta * log(
     Reduce(function(x,y){x+y},lapply(position.vector, function(x){as.numeric(exp(as.brob(x / d.beta)))}), 0)
   )
+  
+  # delta in cost at each position is how much money the market takes in. the assumption
+  # is that in one block the market takes in approximately as it would over pieces. 
+  # to be tested in another iteration
   intake          <- d.cost - initial.cost
+  
+  # the max outlay is just the # of positions on the winning bet
   outlay          <- max(position.vector) - initial.events
+  
+  # the total # of positions taken in the market
   positions       <- sum(position.vector) - atoms * initial.events
+  
+  # assuming each position was purchased at a price of 1/atoms
   volume          <- positions / atoms
+  
+  # the market's profit/loss w/out per-transaction charges
   market.profit   <- intake - outlay
+  
+  # w/ per-transaction charges
   maker.profit    <- market.profit + charge * positions
+  
+  # roll-up of summary statistics
   summary         <- data.frame(
     "Total Risk"         = initial.cost,
     "Naked Profit"       = market.profit,
