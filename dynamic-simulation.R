@@ -89,7 +89,7 @@ SimulateDynamicMarket <- function(slack, beta, base, fee, mean, sd, steps) {
   }
   
   # the max outlay is just the # of positions on the winning bet
-  outlay          <- max(position.vector) - initial.events
+  outlay          <- max(position.vector)
   
   # the total # of positions taken in the market
   positions       <- sum(round(position.vector)) - atoms * initial.events
