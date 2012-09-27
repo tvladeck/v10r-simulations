@@ -41,10 +41,15 @@ CostOfMarket <- function(alpha, vector) {
   sum   <- sum(vector)
   beta  <- alpha * sum
   cost  <- beta * log(
-    Reduce(function(x,y){x+y},lapply(vector, function(x){as.numeric(exp(as.brob(x / beta)))}), 0)
+    Reduce(
+      function(x,y){x+y},
+      lapply(vector, 
+             function(x){as.brob(exp(as.brob(x / beta)))}), 
+      0)
   )
   return(cost)
 }
+
 
 SimulateDynamicMarket <- function(slack, beta, base, fee, mean, sd, steps) {
   # Simulates a path dependent market
