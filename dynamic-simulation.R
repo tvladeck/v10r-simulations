@@ -50,7 +50,6 @@ CostOfMarket <- function(alpha, vector) {
   return(cost)
 }
 
-
 SimulateDynamicMarket <- function(slack, beta, base, fee, mean, sd, steps) {
   # Simulates a path dependent market
   # Args:

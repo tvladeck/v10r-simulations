@@ -9,55 +9,54 @@ SimulateWorstCaseMarket <- function(slack, beta, base, fee, volume, delta) {
   #   beta: initial liquidity
   #   base: # of base events
   #   fee: fee charged for single-conditoin transaction
-  #   volume: total monetary volume estimated
-  #   delta: distance (in money) winning position over rest of market
+  #   volume: total positional volume estimated
+  #   delta: distance (in positions) winning position over rest of market
   
-  # number of atoms in the market  
-  atoms              <- 2 ** base
+  # calculating basic parameters
+  atoms                <- 2 ** base
+  alpha                <- CalculateAlpha(slack, base)
+  init.cost            <- CalculateInitialCost(slack, beta, base)
+  charge               <- fee / (2 ** (base - 1))
   
-  # assuming positions / atoms = volume
-  # i.e., that each position costs ~ 1 / atoms
-  total.positions    <- atoms * volume
-  position.delta     <- atoms * delta
+  init.position.level  <- (beta / alpha) / atoms
+  init.vector          <- seq(0, 0, length=atoms) + init.position.level
   
-  alpha              <- CalculateAlpha(slack, base)
-  init.cost          <- CalculateInitialCost(slack, beta, base)
+  base.position.level  <- (volume - delta) / atoms
+  position.vector      <- seq(base.position.level, base.position.level, length=atoms)
+  position.vector[1]   <- position.vector[1] + delta
   
-  # total # of positions taken by participants * charge
-  charge             <- fee / (2 ** (base-1))
-  charge.intake      <- charge * total.positions
+  expect_equal(sum(position.vector), volume)
   
-  initial.events     <- (beta / alpha) / atoms
-  initial.vector     <- seq(0, 0, length=atoms) + initial.events
-  expect_that(init.cost, equals(CostOfMarket(alpha, initial.vector)))
+  total.vector         <- init.vector + position.vector
+  final.cost           <- CostOfMarket(alpha, total.vector)
+  new.beta             <- alpha * sum(total.vector)
   
-  base.position      <- (total.positions - position.delta) / atoms
-  position.vector    <- initial.vector + base.position
-  position.vector[1] <- position.vector[1] + position.delta
+  expect_true(final.cost > init.cost)
   
-  expect_that(sum(position.vector), equals(sum(initial.vector) + total.positions))
+  payout               <- max(position.vector)
   
-  final.cost         <- CostOfMarket(alpha, position.vector)
-  expect_false(final.cost == Inf)
+  expect_equal(payout, base.position.level + delta)
   
-  market.intake      <- final.cost - init.cost
-  expect_true(total.positions > market.intake)
+  total.intake         <- final.cost - init.cost
+  average.price        <- total.intake / volume
   
-  average.price      <- market.intake / total.positions
   expect_false(average.price > (1 + slack))
   
-  payout             <- max(position.vector) - initial.events
-  profit             <- market.intake + charge.intake
-  new.beta           <- alpha * sum(position.vector)
-  summary            <- data.frame(
-    "Total Risk"      = init.cost,
-    "Naked Profit"    = market.intake,
-    "Market Profit"   = profit,
-    "Average Price"   = average.price,
-    "Payout"          = payout,
-    "Volume"          = volume,
-    "New Beta"        = new.beta
-  )
+  naked.profit         <- total.intake - payout
   
-  return(summary) 
+  fee.collected        <- charge * volume
+  
+  market.profit        <- naked.profit + fee.collected
+  
+  summary <- data.frame(
+    "Total Risk" = init.cost,
+    "Naked Profit" = naked.profit,
+    "Market Profit" = market.profit,
+    "Average price" = average.price,
+    "New beta" = new.beta,
+    "Total intake" = total.intake,
+    "Payout" = payout
+  )
+ 
+  return(summary)
 }
