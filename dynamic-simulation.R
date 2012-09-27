@@ -120,9 +120,3 @@ SimulateDynamicMarket <- function(slack, beta, base, fee, mean, sd, steps) {
   return(round(summary))
 }
 
-
-
-
-
-
-
