@@ -1,6 +1,3 @@
-library("Brobdingnag")
-library("testthat")
-
 SimulateWorstCaseMarket <- function(slack, beta, base, fee, volume, delta) {
   # Simulates a market wherein everyone has exited their position in all but
   # the winning position
