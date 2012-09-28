@@ -1,9 +1,9 @@
 library("Brobdingnag")
 
-SimulateStaticMarket <- function(slack, beta, base, fee, mean, sd) {
+SimulateStaticMarket <- function(delta, beta, base, fee, mean, sd) {
   # Simulates a path dependent market
   # Args:
-  #   slack: the amount above one prices may rise
+  #   delta: the amount above one prices may rise
   #   beta: the initial beta
   #   base: the number of base events
   #   fee: the average fee charged by the market
@@ -17,9 +17,9 @@ SimulateStaticMarket <- function(slack, beta, base, fee, mean, sd) {
   
   # working out some basic details of the market
   atoms           <- 2 ** base
-  alpha           <- CalculateAlpha(slack, base)
+  alpha           <- CalculateAlpha(delta, base)
   initial.events  <- (beta / alpha) / atoms
-  initial.cost    <- CalculateInitialCost(slack, beta, base)
+  initial.cost    <- CalculateInitialCost(delta, beta, base)
   
   # generate a position vector with a gaussian dist with parameters given in the function
   position.vector <- round(rnorm(atoms, mean, sd)) + initial.events

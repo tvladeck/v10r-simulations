@@ -1,8 +1,8 @@
 
-SimulateDynamicMarket <- function(slack, beta, base, fee, mean, sd, steps) {
+SimulateDynamicMarket <- function(delta, beta, base, fee, mean, sd, steps) {
   # Simulates a path dependent market
   # Args:
-  #   slack: the amount above one prices may rise
+  #   delta: the amount above one prices may rise
   #   beta: the initial beta
   #   base: the number of base events
   #   fee: the average fee charged by the market
@@ -17,9 +17,9 @@ SimulateDynamicMarket <- function(slack, beta, base, fee, mean, sd, steps) {
   
   # working out some basic details of the market
   atoms           <- 2 ** base
-  alpha           <- CalculateAlpha(slack, base)
+  alpha           <- CalculateAlpha(delta, base)
   initial.events  <- (beta / alpha) / atoms
-  initial.cost    <- CalculateInitialCost(slack, beta, base)
+  initial.cost    <- CalculateInitialCost(delta, beta, base)
   
   # this is the initial vector at desired liquidity levels
   initial.vector  <- seq(0, 0, length=atoms) + initial.events

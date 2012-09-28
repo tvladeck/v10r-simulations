@@ -1,19 +1,19 @@
 library("Brobdingnag")
 library("testthat")
 
-CalculateAlpha <- function(slack, n=10) {
-  # alpha * n log n = slack;
+CalculateAlpha <- function(delta, n=10) {
+  # alpha * n log n = delta;
   n <- 2 ** n
   nlogn <- n * log(n)
-  alpha <- slack / nlogn
+  alpha <- delta / nlogn
   return(alpha)
 }
 
-CalculateInitialCost <- function(slack, beta, n=10) {
+CalculateInitialCost <- function(delta, beta, n=10) {
   # Compute the total initial cost of the market. 
   # 
   # Args:
-  #   slack;: the total price slack;erence from 1 that will be allowed
+  #   delta;: the total price delta;erence from 1 that will be allowed
   #   beta: the initial desired beta
   #   n: the number of events in the market
   # 
@@ -22,8 +22,8 @@ CalculateInitialCost <- function(slack, beta, n=10) {
   n                   <- 2 ** n
   nlogn               <- n * log(n)
   
-  # slack; = alpha * n log n
-  alpha               <- slack / nlogn
+  # delta; = alpha * n log n
+  alpha               <- delta / nlogn
   
   # init_events is the total number of events that must be "seeded"
   # beta (beta) = alpha * sum_i q_i
@@ -49,4 +49,25 @@ CostOfMarket <- function(alpha, vector) {
       0)
   )
   return(cost)
+}
+
+NoRiskVolume <- function(delta, beta, base, fee, avg.price=0.0012) {
+  # Calculates the volume at which there is no risk to the market maker
+  # because the maker has collected enough in fees to cover the maximum
+  # risk
+  # Args:
+  #   delta: the amount above 1 prices may rise
+  #   beta: initial liquidity
+  #   base: number of base events
+  #   fee: the fee for a one condition position
+  #   avg.price: the assumed average price of a single position 
+  #     should be slightly greater than 1 / 2**base
+  # Returns:
+  #   the monetary volume required to reach the "no risk" state
+  alpha                    <- CalculateAlpha(delta, beta)
+  risk                     <- CalculateInitialCost(delta, beta, base)
+  charge                   <- fee / (2**(base-1))
+  break.even.positions     <- risk / charge
+  necessary.vol            <- break.even.positions * avg.price
+  return(necessary.vol)    
 }

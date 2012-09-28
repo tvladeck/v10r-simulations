@@ -1,8 +1,8 @@
-SimulateWorstCaseMarket <- function(slack, beta, base, fee, volume, delta) {
+SimulateWorstCaseMarket <- function(delta, beta, base, fee, volume, delta) {
   # Simulates a market wherein everyone has exited their position in all but
   # the winning position
   # Args:
-  #   slack: level above 1 which prices may rise
+  #   delta: level above 1 which prices may rise
   #   beta: initial liquidity
   #   base: # of base events
   #   fee: fee charged for single-conditoin transaction
@@ -11,8 +11,8 @@ SimulateWorstCaseMarket <- function(slack, beta, base, fee, volume, delta) {
   
   # calculating basic parameters
   atoms                <- 2 ** base
-  alpha                <- CalculateAlpha(slack, base)
-  init.cost            <- CalculateInitialCost(slack, beta, base)
+  alpha                <- CalculateAlpha(delta, base)
+  init.cost            <- CalculateInitialCost(delta, beta, base)
   charge               <- fee / (2 ** (base - 1))
   
   init.position.level  <- (beta / alpha) / atoms
@@ -37,7 +37,7 @@ SimulateWorstCaseMarket <- function(slack, beta, base, fee, volume, delta) {
   total.intake         <- final.cost - init.cost
   average.price        <- total.intake / volume
   
-  expect_false(average.price > (1 + slack))
+  expect_false(average.price > (1 + delta))
   
   naked.profit         <- total.intake - payout
   
