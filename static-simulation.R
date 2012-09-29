@@ -57,7 +57,8 @@ SimulateStaticMarket <- function(delta, beta, base, fee, mean, sd) {
   next.last.vec      <- position.vector
   pos                <- which.max(next.last.vec)
   next.last.vec[pos] <- next.last.vec[pos] - 1
-  last.price         <- CostOfMarket(alpha, position.vector) - CostOfMarket(alpha, next.last.vec)
+  last.price         <- CostOfMarket(alpha, position.vector) - 
+                          CostOfMarket(alpha, next.last.vec)
   
   # roll-up of summary statistics
   summary         <- data.frame(
